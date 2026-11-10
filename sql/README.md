@@ -10,6 +10,10 @@ To restore only the five demo case statuses, run `02_reset_demo_statuses.sql`. T
 
 The web app can list cases, update their status, and provide current case details to the Foundry agent. Set `SQL_SERVER` and `SQL_DATABASE` in the app environment and give its managed identity the database permissions in `03_grant_app_access.sql`. The agent uses the `get_case_details` function for current case facts and Foundry IQ for policies. To deploy the updated agent, run `scripts/create_agent.py` with the correct project settings.
 
+For the asynchronous simulated-credit workflow, run `04_credit_requests.sql` as an Entra database administrator after reviewing its managed-identity name. It creates a separate request table and grants the demo identity the necessary table access. See [the processor guide](../credit-processor/README.md) for queue delivery, status meanings, and limitations. The case-status reset does not delete requests.
+
+For appointment-level simulated history and transactional-outbox publishing, resolve any existing unprocessed requests and then run `05_credit_outbox.sql`. It preserves existing issued history and processed requests, adds allocations and an outbox, and permits the `Simulated` history status. Older processed requests are not backfilled. Test data reset and replay need explicit handling; resetting case statuses does not remove history or outbox events.
+
 Example read queries:
 
 ```sql

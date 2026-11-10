@@ -8,6 +8,7 @@ path (no Azure calls, no Azure packages imported).
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import sys
@@ -23,6 +24,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from webapp import cases
+from webapp import credit_requests
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -35,7 +37,16 @@ ACTION_LOG = ROOT / "output" / "service-credit-actions.jsonl"
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 FRONTLINE_LIMIT_EUR = 150.0
 
+if os.getenv('APPLICATIONINSIGHTS_CONNECTION_STRING'):
+    from azure.monitor.opentelemetry import configure_azure_monitor
+    configure_azure_monitor(logger_name='contoso.demo')
+
+logger = logging.getLogger('contoso.demo')
+logger.setLevel(logging.INFO)
 app = FastAPI(title="Microsoft IQ demo")
+if os.getenv('APPLICATIONINSIGHTS_CONNECTION_STRING'):
+    from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+    FastAPIInstrumentor.instrument_app(app)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 _lock = Lock()
@@ -62,8 +73,10 @@ def _read_case(call) -> dict:
         if not isinstance(case_id, str) or not re.fullmatch(r'CASE-[A-Za-z0-9-]{1,40}', case_id):
             return {'error': 'Invalid case ID.'}
         result = cases.get_case(case_id)
+        logger.info('case_lookup found=%s', result is not None)
         return result if result is not None else {'error': 'Case not found.'}
     except Exception:
+        logger.exception('case_lookup_failed')
         return {'error': 'Case data is unavailable. Do not infer current case facts.'}
 
 
@@ -94,8 +107,10 @@ def _query_fabric(call, user_token: str | None) -> dict:
         refs = [{"source": "Fabric ontology: contosoiq", "answer": r.get("sourceData", {}).get("fabricAnswer"),
                  "data": r.get("sourceData", {}).get("fabricRawData")} for r in data.get("references", [])
                 if r.get("type") == "fabricOntology"]
+        logger.info('fabric_ontology_retrieval references=%s', len(refs))
         return {"source": "Fabric ontology: contosoiq", "freshness": "Warehouse snapshot; may lag Azure SQL.", "references": refs} if refs else {"error": "Fabric returned no ontology references."}
     except Exception:
+        logger.warning('fabric_ontology_retrieval_failed')
         return {"error": "Fabric ontology retrieval is unavailable or you lack access. Do not infer its data."}
 
 
@@ -147,18 +162,25 @@ def _write_audit_record(arguments: dict) -> dict:
     return record
 
 
-def _execute_credit_request(arguments: dict, approved: bool) -> dict:
+def _execute_credit_request(arguments: dict, approved: bool, request_id: str | None = None) -> dict:
     if not approved:
         return {
             "status": "rejected_by_operator",
             "message": "The operator declined the proposed action. No request was submitted.",
         }
-    if float(arguments["amount_eur"]) > FRONTLINE_LIMIT_EUR:
-        return {
-            "status": "blocked_by_action_policy",
-            "message": f"The action service blocks frontline submissions above EUR {FRONTLINE_LIMIT_EUR:.0f}.",
-        }
-    return _write_audit_record(arguments)
+    if REHEARSAL:
+        if float(arguments['amount_eur']) > FRONTLINE_LIMIT_EUR:
+            return {'status': 'blocked_by_action_policy', 'message': 'Request exceeds the frontline limit.'}
+        return _write_audit_record(arguments)
+    request_id = request_id or f'SCR-{uuid.uuid4().hex}'
+    try:
+        result = credit_requests.submit(request_id, arguments)
+    except Exception:
+        logger.exception('service_credit_submission_failed request_id=%s', request_id)
+        result = {'status': 'unconfirmed', 'action_id': request_id,
+                  'message': 'The request could not be confirmed. Check its status before retrying.'}
+    logger.info('service_credit_submission request_id=%s status=%s', request_id, result.get('status'))
+    return result
 
 
 def _reject_stale_pending(client) -> None:
@@ -243,6 +265,9 @@ def _handle_response(client, response, user_token: str | None = None) -> dict:
 
     while True:
         calls = [item for item in response.output if item.type == "function_call"]
+        for item in response.output:
+            if item.type in ('function_call', 'mcp_call'):
+                logger.info('agent_tool type=%s name=%s', item.type, getattr(item, 'name', 'knowledge_base_retrieve'))
         if not calls:
             return {"type": "message", "text": _citation_text(response)}
 
@@ -386,6 +411,11 @@ def case_status(case_id: str, body: CaseStatusIn) -> dict:
 
 @app.get("/api/audit")
 def audit() -> list[dict]:
+    if not REHEARSAL:
+        try:
+            return credit_requests.recent()
+        except Exception as err:
+            raise HTTPException(503, 'Credit request history is unavailable.') from err
     if not ACTION_LOG.exists():
         return []
     records = []
@@ -445,6 +475,7 @@ def chat(body: ChatIn, request: Request) -> dict:
                 response = _send()
             else:
                 raise HTTPException(502, f"Agent call failed: {err}") from err
+        logger.info('agent_response response_id=%s', getattr(response, 'id', 'unknown'))
         return _handle_response(client, response, request.headers.get("x-ms-token-aad-access-token"))
 
 
@@ -466,7 +497,7 @@ def decision(body: DecisionIn, request: Request) -> dict:
         results = []
         for call in pending["calls"]:
             if call.name == "create_service_credit_request":
-                result = _execute_credit_request(json.loads(call.arguments), body.approved)
+                result = _execute_credit_request(json.loads(call.arguments), body.approved, f'SCR-{body.pending_id}')
                 results.append(result)
             elif call.name == "get_case_details":
                 result = _read_case(call)
@@ -487,8 +518,15 @@ def decision(body: DecisionIn, request: Request) -> dict:
                 conversation=_state["conversation_id"],
                 extra_body=_agent_reference(),
             )
-            return _handle_response(client, response, request.headers.get("x-ms-token-aad-access-token"))
+            reply = _handle_response(client, response, request.headers.get("x-ms-token-aad-access-token"))
+            invalid = next((r for r in results if r.get('status') in ('invalid_request', 'blocked_by_action_policy')), None)
+            if invalid:
+                return {'type': 'message', 'text': invalid['message']}
+            return reply
         except Exception as err:  # noqa: BLE001 — the side effect already happened; report it
+            invalid = next((r for r in results if r.get('status') in ('invalid_request', 'blocked_by_action_policy')), None)
+            if invalid:
+                return {'type': 'message', 'text': invalid['message']}
             summary = "; ".join(
                 f"{r.get('status')}" + (f" ({r['action_id']})" if "action_id" in r else "")
                 for r in results

@@ -444,7 +444,7 @@
       <div id="prompts"></div>
     </section>
     <section>
-      <h2>Audit log <button type="button" id="refresh-audit" class="mini">Refresh</button></h2>
+      <h2>Credit requests <button type="button" id="refresh-audit" class="mini">Refresh</button></h2>
       <div id="audit"><span class="empty">No governed actions recorded yet.</span></div>
     </section>
   </aside>
@@ -482,12 +482,13 @@ function actionCard(reply) {
     <div class="head">Governed action request — awaiting operator</div>
     <div class="body">
       <p>The model proposed <code>${reply.function}</code>. Nothing has executed. The application — not the model — owns the side effect.</p>
-      <pre>${JSON.stringify(reply.arguments, null, 2)}</pre>
+      <pre></pre>
       <div class="buttons">
         <button type="button" class="primary" data-a="1">Approve &amp; submit</button>
         <button type="button" class="danger-ghost" data-a="0">Decline</button>
       </div>
     </div>`;
+  card.querySelector('pre').textContent = JSON.stringify(reply.arguments, null, 2);
   card.querySelectorAll('button').forEach(btn => btn.addEventListener('click', async () => {
     card.querySelectorAll('button').forEach(b => b.disabled = true);
     const approved = btn.dataset.a === '1';
@@ -585,7 +586,7 @@ async function loadAudit() {
   rows.forEach(r => {
     const div = document.createElement('div');
     div.className = 'audit-row';
-    div.innerHTML = `${r.action_id} · <span class="amt">€${r.amount_eur}</span> · ${r.customer_id}<br>${r.status}`;
+    div.textContent = `${r.action_id} · €${r.amount_eur} · ${r.customer_id} · ${r.status}`;
     el.appendChild(div);
   });
 }

@@ -54,6 +54,17 @@ class CaseIntegrationTests(unittest.TestCase):
         self.assertEqual(response.status_code, 403)
         self.assertIn('p1', pending)
 
+    @patch('webapp.app._handle_response', return_value={'type': 'message', 'text': 'Misleading model explanation'})
+    @patch('webapp.app._execute_credit_request', return_value={'status': 'invalid_request', 'message': 'Customer availability is missing. No request was saved.'})
+    @patch('webapp.app._openai_client')
+    def test_validation_result_is_shown_instead_of_model_guess(self, client_factory, execute, handle):
+        call = SimpleNamespace(name='create_service_credit_request', call_id='call1', arguments='{}')
+        state = {'user_id': 'owner', 'pending': {'p1': {'calls': [call]}}, 'conversation_id': 'c1'}
+        with patch('webapp.app.REHEARSAL', False), patch('webapp.app._state', state):
+            response = self.client.post('/api/decision', headers={'x-ms-client-principal-id': 'owner'}, json={'pending_id': 'p1', 'approved': True})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['text'], 'Customer availability is missing. No request was saved.')
+
     @patch('requests.post')
     @patch.dict('os.environ', {'FABRIC_IQ_SEARCH_ENDPOINT': 'https://example.search.windows.net', 'FABRIC_IQ_KNOWLEDGE_BASE': 'fabric-kb', 'FABRIC_IQ_KNOWLEDGE_SOURCE': 'fabric-source'})
     def test_fabric_forwards_user_token_and_preserves_reference(self, post):
