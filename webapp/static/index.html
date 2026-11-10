@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contoso Service Intelligence</title>
+<style>
+  :root {
+    --paper: #F3F7FB;
+    --paper-strong: #EAF2F9;
+    --ink: #122634;
+    --muted: #536B7B;
+    --azure: #0F6CBD;
+    --azure-strong: #084F96;
+    --azure-soft: #E7F0FA;
+    --cyan: #0EA5A4;
+    --amber: #B66900;
+    --amber-soft: #FFF2DE;
+    --green: #0D7A4A;
+    --green-soft: #EAF8F1;
+    --line: #D9E4EE;
+    --card: rgba(255, 255, 255, 0.86);
+    --panel: rgba(255, 255, 255, 0.72);
+    --on-azure: #FFFFFF;
+    --mono-bg: #EDF3F8;
+    --shadow: 0 10px 30px rgba(15, 31, 44, 0.08);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0F1722;
+      --paper-strong: #162535;
+      --ink: #E9F1F8;
+      --muted: #9AB0C0;
+      --azure: #69B1F7;
+      --azure-strong: #9CCBFF;
+      --azure-soft: #18324C;
+      --cyan: #6AE1D6;
+      --amber: #F0B667;
+      --amber-soft: #3A2B18;
+      --green: #7CD9A2;
+      --green-soft: #16372A;
+      --line: #2B3D4E;
+      --card: rgba(17, 28, 38, 0.88);
+      --panel: rgba(17, 28, 38, 0.82);
+      --on-azure: #0C1B28;
+      --mono-bg: #1C2E3F;
+      --shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    background:
+      radial-gradient(circle at top left, rgba(15, 108, 189, 0.12), transparent 28%),
+      radial-gradient(circle at bottom right, rgba(14, 165, 164, 0.12), transparent 30%),
+      var(--paper);
+    color: var(--ink);
+    font-family: "Segoe UI Variable Text", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  body {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    flex-wrap: wrap;
+    padding: 0.9rem 1.4rem;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 1px 0 rgba(17, 24, 39, 0.04);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    min-width: 0;
+  }
+
+  .logo {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.8rem;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, var(--azure), var(--cyan));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), var(--shadow);
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.45);
+  }
+
+  .logo img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+  }
+
+  .brand-copy {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+  }
+
+  .brand-copy .eyebrow {
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  .brand-copy strong {
+    font-size: 1.04rem;
+    letter-spacing: -0.02em;
+  }
+
+  .badge {
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.35rem 0.65rem;
+    border-radius: 999px;
+    background: var(--azure-soft);
+    color: var(--azure-strong);
+    border: 1px solid rgba(15, 108, 189, 0.14);
+  }
+
+  .badge.rehearsal {
+    background: var(--amber-soft);
+    color: var(--amber);
+    border-color: rgba(182, 105, 0, 0.2);
+  }
+
+  header .spacer { flex: 1; }
+
+  button {
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--ink);
+    border-radius: 0.7rem;
+    padding: 0.55rem 0.96rem;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+  }
+
+  button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(17, 24, 39, 0.08);
+  }
+
+  button:focus-visible {
+    outline: 2px solid var(--azure);
+    outline-offset: 2px;
+  }
+
+  button.primary {
+    background: linear-gradient(135deg, var(--azure), var(--azure-strong));
+    border-color: transparent;
+    color: var(--on-azure);
+  }
+
+  button.danger-ghost {
+    color: var(--amber);
+    border-color: rgba(182, 105, 0, 0.3);
+    background: transparent;
+  }
+
+  main {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  #chat-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 1.25rem;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  #log {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    background: linear-gradient(180deg, rgba(255,255,255,0.08), transparent 10%);
+  }
+
+  /* Flex items default to flex-shrink:1 — without this, overflowing chat
+     content gets compressed to fit instead of making #log scroll. */
+  #log > * { flex-shrink: 0; }
+
+  .msg {
+    max-width: 46rem;
+    padding: 0.8rem 1rem;
+    border-radius: 1rem;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    box-shadow: 0 4px 16px rgba(17, 24, 39, 0.04);
+  }
+
+  .msg.you {
+    align-self: flex-end;
+    background: linear-gradient(135deg, var(--azure), var(--azure-strong));
+    color: var(--on-azure);
+    border-bottom-right-radius: 0.3rem;
+  }
+
+  .msg.agent {
+    align-self: flex-start;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-bottom-left-radius: 0.3rem;
+  }
+
+  .msg.system {
+    align-self: center;
+    color: var(--muted);
+    font-size: 0.82rem;
+    background: none;
+    border: 0;
+    box-shadow: none;
+    padding: 0.1rem 0.4rem;
+  }
+
+  .action-card {
+    align-self: flex-start;
+    max-width: 46rem;
+    width: 100%;
+    border: 1px solid rgba(182, 105, 0, 0.26);
+    border-left-width: 4px;
+    border-radius: 1rem;
+    background: var(--card);
+    overflow: hidden;
+    box-shadow: 0 8px 22px rgba(182, 105, 0, 0.08);
+  }
+
+  .action-card .head {
+    padding: 0.7rem 1rem;
+    background: linear-gradient(135deg, var(--amber-soft), var(--card));
+    color: var(--amber);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .action-card .body { padding: 0.95rem 1rem 1rem; display: flex; flex-direction: column; gap: 0.8rem; }
+  .action-card p { margin: 0; font-size: 0.9rem; color: var(--muted); }
+  .action-card pre {
+    margin: 0;
+    padding: 0.8rem 0.9rem;
+    background: var(--mono-bg);
+    border-radius: 0.7rem;
+    font-family: "Cascadia Code", Consolas, monospace;
+    font-size: 0.83rem;
+    overflow-x: auto;
+    border: 1px solid var(--line);
+  }
+  .action-card .buttons { display: flex; gap: 0.6rem; }
+  .result { font-size: 0.85rem; font-weight: 700; }
+  .result.ok { color: var(--green); }
+  .result.no { color: var(--amber); }
+
+  #composer {
+    display: flex;
+    gap: 0.7rem;
+    padding: 0.9rem 1.1rem 1rem;
+    border-top: 1px solid var(--line);
+    background: var(--panel);
+  }
+
+  #composer textarea {
+    flex: 1;
+    resize: none;
+    min-height: 3.35rem;
+    font: inherit;
+    padding: 0.8rem 0.9rem;
+    border-radius: 0.9rem;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--ink);
+    box-shadow: inset 0 1px 2px rgba(17,24,39,0.04);
+  }
+
+  #composer textarea:focus-visible {
+    outline: 2px solid var(--azure);
+    outline-offset: 1px;
+  }
+
+  aside {
+    width: 22rem;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    border-radius: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    box-shadow: var(--shadow);
+  }
+
+  aside section {
+    padding: 1rem 1.1rem;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  aside h2 {
+    margin: 0;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .prompt-chip {
+    text-align: left;
+    font-size: 0.84rem;
+    line-height: 1.45;
+    padding: 0.8rem 0.85rem;
+    border-radius: 0.8rem;
+    background: var(--card);
+    border: 1px solid var(--line);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  }
+
+  .prompt-chip:hover {
+    border-color: rgba(15, 108, 189, 0.26);
+    box-shadow: 0 8px 18px rgba(15,108,189,0.08);
+  }
+
+  .prompt-chip b {
+    display: block;
+    font-size: 0.66rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--azure);
+    margin-bottom: 0.18rem;
+  }
+
+  #audit { display: flex; flex-direction: column; gap: 0.55rem; font-size: 0.8rem; }
+
+  .audit-row {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 0.8rem;
+    padding: 0.65rem 0.75rem;
+    font-family: "Cascadia Code", Consolas, monospace;
+    font-size: 0.75rem;
+    line-height: 1.5;
+  }
+
+  .audit-row .amt { color: var(--azure); font-weight: 700; }
+  .empty { color: var(--muted); font-size: 0.8rem; }
+  .case-list { display: flex; flex-direction: column; gap: 0.55rem; }
+  .case-row { padding: 0.7rem; border: 1px solid var(--line); border-radius: 0.8rem; background: var(--card); }
+  .case-row strong, .case-row small { display: block; }
+  .case-row small { color: var(--muted); margin: 0.25rem 0 0.55rem; }
+  .case-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .case-actions button { font-size: 0.72rem; padding: 0.3rem 0.5rem; }
+  .case-filter { font-size: 0.78rem; color: var(--muted); }
+  button.mini { float: right; font-size: 0.72rem; padding: 0.2rem 0.55rem; }
+  .typing { color: var(--muted); font-size: 0.85rem; align-self: flex-start; }
+
+  @media (max-width: 900px) {
+    body { height: auto; min-height: 100vh; }
+    main { flex-direction: column; }
+    #chat-col { min-height: 60vh; }
+    aside { width: 100%; max-height: 45vh; }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .msg, .action-card, .prompt-chip { animation: rise 0.18s ease-out; }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: none; }
+    }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand" aria-label="Contoso Service Intelligence brand">
+    <div class="logo" aria-label="Contoso logo">
+      <img src="/static/images/logo.png" alt="Contoso logo" />
+    </div>
+    <div class="brand-copy">
+      <span class="eyebrow">Contoso</span>
+      <strong>Service Intelligence</strong>
+    </div>
+  </div>
+  <span class="badge" id="mode-badge">Live</span>
+  <div class="spacer"></div>
+  <button type="button" id="reset">New conversation</button>
+</header>
+<main>
+  <div id="chat-col">
+    <div id="log">
+      <div class="msg system">Grounded by a Foundry IQ knowledge base. Actions require operator approval.</div>
+    </div>
+    <form id="composer">
+      <textarea id="input" placeholder="Ask about customer C-1042… (Enter to send, Shift+Enter for a new line)" aria-label="Message"></textarea>
+      <button class="primary" type="submit">Send</button>
+    </form>
+  </div>
+  <aside>
+    <section>
+      <h2>Customer cases <button type="button" id="refresh-cases" class="mini">Refresh</button></h2>
+      <label class="case-filter"><input type="checkbox" id="show-resolved"> Show resolved</label>
+      <div id="cases" class="case-list"><span class="empty">Loading cases…</span></div>
+    </section>
+    <section>
+      <h2>Demo prompts</h2>
+      <div id="prompts"></div>
+    </section>
+    <section>
+      <h2>Audit log <button type="button" id="refresh-audit" class="mini">Refresh</button></h2>
+      <div id="audit"><span class="empty">No governed actions recorded yet.</span></div>
+    </section>
+  </aside>
+</main>
+<script>
+const log = document.getElementById('log');
+const input = document.getElementById('input');
+const composer = document.getElementById('composer');
+let caseRows = [];
+let selectedCaseId = null;
+
+function add(el) { log.appendChild(el); log.scrollTop = log.scrollHeight; return el; }
+
+function message(cls, text) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + cls;
+  div.textContent = text;
+  return add(div);
+}
+
+async function api(path, body) {
+  const res = await fetch(path, body === undefined ? {} : {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || res.statusText);
+  return res.json();
+}
+
+function actionCard(reply) {
+  const card = document.createElement('div');
+  card.className = 'action-card';
+  card.innerHTML = `
+    <div class="head">Governed action request — awaiting operator</div>
+    <div class="body">
+      <p>The model proposed <code>${reply.function}</code>. Nothing has executed. The application — not the model — owns the side effect.</p>
+      <pre>${JSON.stringify(reply.arguments, null, 2)}</pre>
+      <div class="buttons">
+        <button type="button" class="primary" data-a="1">Approve &amp; submit</button>
+        <button type="button" class="danger-ghost" data-a="0">Decline</button>
+      </div>
+    </div>`;
+  card.querySelectorAll('button').forEach(btn => btn.addEventListener('click', async () => {
+    card.querySelectorAll('button').forEach(b => b.disabled = true);
+    const approved = btn.dataset.a === '1';
+    try {
+      const out = await api('/api/decision', { pending_id: reply.pending_id, approved });
+      const verdict = document.createElement('div');
+      verdict.className = 'result ' + (approved ? 'ok' : 'no');
+      verdict.textContent = approved ? 'Approved by operator' : 'Declined by operator';
+      card.querySelector('.buttons').replaceWith(verdict);
+      handleReply(out);
+      loadAudit();
+    } catch (err) { message('system', 'Error: ' + err.message); }
+  }));
+  return add(card);
+}
+
+function handleReply(reply) {
+  if (reply.type === 'action_request') actionCard(reply);
+  else message('agent', reply.text);
+}
+
+function renderCases() {
+  const box = document.getElementById('cases');
+  const visible = caseRows.filter(c => c.CaseStatus === 'Pending' || document.getElementById('show-resolved').checked);
+  box.replaceChildren();
+  if (!visible.length) { box.textContent = 'No cases to show.'; return; }
+  visible.forEach(c => {
+    const row = document.createElement('div'); row.className = 'case-row';
+    const title = document.createElement('strong'); title.textContent = `${c.CaseId} · ${c.DisplayName}`;
+    const details = document.createElement('small'); details.textContent = `${c.CaseStatus} · ${c.Category} · ${c.CustomerId}`;
+    const actions = document.createElement('div'); actions.className = 'case-actions';
+    const select = document.createElement('button'); select.type = 'button'; select.textContent = 'Discuss case';
+    select.addEventListener('click', async () => {
+      try {
+        await api('/api/reset', {}); log.replaceChildren(); selectedCaseId = c.CaseId;
+        message('system', `Selected ${c.CaseId} for ${c.DisplayName}. A new conversation has started.`);
+        input.value = `Review ${c.CaseId}. What happened and what remedy applies? Use the current case records and approved policy.`;
+        input.focus();
+      } catch (err) { message('system', 'Could not select case: ' + err.message); }
+    });
+    const status = document.createElement('button'); status.type = 'button';
+    status.textContent = c.CaseStatus === 'Pending' ? 'Mark resolved' : 'Mark pending';
+    status.addEventListener('click', async () => {
+      status.disabled = true;
+      try { await api(`/api/cases/${encodeURIComponent(c.CaseId)}/status`, {status: c.CaseStatus === 'Pending' ? 'Resolved' : 'Pending'}); await loadCases(); }
+      catch (err) { status.disabled = false; message('system', 'Could not update case: ' + err.message); }
+    });
+    actions.append(select, status); row.append(title, details, actions); box.appendChild(row);
+  });
+}
+
+async function loadCases() {
+  try { caseRows = await api('/api/cases'); renderCases(); }
+  catch (err) { document.getElementById('cases').textContent = 'Cases unavailable: ' + err.message; }
+}
+document.getElementById('show-resolved').addEventListener('change', renderCases);
+document.getElementById('refresh-cases').addEventListener('click', loadCases);
+
+composer.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  document.querySelectorAll('.action-card .buttons').forEach(b => {
+    const note = document.createElement('div');
+    note.className = 'result no';
+    note.textContent = 'Superseded — no action taken';
+    b.replaceWith(note);
+  });
+  message('you', text);
+  const typing = message('typing', 'Retrieving from approved sources…');
+  typing.className = 'typing';
+  try {
+    const reply = await api('/api/chat', { message: selectedCaseId ? `Selected case: ${selectedCaseId}. ${text}` : text });
+    typing.remove();
+    handleReply(reply);
+  } catch (err) { typing.remove(); message('system', 'Error: ' + err.message); }
+});
+
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); composer.requestSubmit(); }
+});
+
+document.getElementById('reset').addEventListener('click', async () => {
+  await api('/api/reset', {});
+  selectedCaseId = null;
+  log.innerHTML = '';
+  message('system', 'New conversation started.');
+});
+
+async function loadAudit() {
+  const rows = await api('/api/audit');
+  const el = document.getElementById('audit');
+  el.innerHTML = rows.length ? '' : '<span class="empty">No governed actions recorded yet.</span>';
+  rows.forEach(r => {
+    const div = document.createElement('div');
+    div.className = 'audit-row';
+    div.innerHTML = `${r.action_id} · <span class="amt">€${r.amount_eur}</span> · ${r.customer_id}<br>${r.status}`;
+    el.appendChild(div);
+  });
+}
+document.getElementById('refresh-audit').addEventListener('click', loadAudit);
+
+(async function init() {
+  const status = await api('/api/status');
+  const badge = document.getElementById('mode-badge');
+  if (status.rehearsal) { badge.textContent = 'Rehearsal'; badge.classList.add('rehearsal'); }
+  const prompts = await api('/api/prompts');
+  const box = document.getElementById('prompts');
+  prompts.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'prompt-chip';
+    btn.innerHTML = `<b>${p.title.replace(/^(OPTIONAL )?PROMPT( \d+)? — /i, '')}</b>${p.text}`;
+    btn.addEventListener('click', () => { input.value = p.text; input.focus(); });
+    box.appendChild(btn);
+  });
+  loadAudit();
+  loadCases();
+})();
+</script>
+</body>
+</html>

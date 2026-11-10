@@ -1,0 +1,50 @@
+# Environment files, including examples, backups, and files in subdirectories
+.env
+.env.*
+*.env
+*.env.*
+
+# Credentials, keys, and local Azure settings
+*.pem
+*.key
+*.pfx
+*.p12
+*.jks
+*.keystore
+*.kubeconfig
+credentials.json
+service-account*.json
+local.settings.json
+.azure/
+
+# Python, build artifacts, logs, and local output
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.build-context/
+build/
+dist/
+*.log
+output/
+
+# Infrastructure state, plans, and local parameters
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+*.tfplan
+*.bicepparam.local
+
+# Local editor and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Superseded, environment-specific mirroring experiments
+sql/mirrored_sql_query*.sql
