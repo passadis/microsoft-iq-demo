@@ -4,7 +4,7 @@
   </a>
 </p>
 
-<h1 align="center">Contoso Service Intelligence</h1>
+<h1 align="center">Contoso Service Intelligence (Microsoft IQ)</h1>
 
 **A service agent that brings case data, business policies, and an enterprise ontology together—with a person in control of the action.**
 
