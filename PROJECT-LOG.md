@@ -1,6 +1,8 @@
 # Contoso Service Intelligence: project log and backlog
 
-Last updated: 2026-11-11. This is a working record of decisions, activities and follow-up work for the synthetic live demo. Azure and preview-service details can change; verify live settings before an event or a new deployment.
+Last updated: 2026-11-13. This is a working record of decisions, activities and follow-up work for the synthetic live demo. Azure and preview-service details can change; verify live settings before an event or a new deployment.
+
+- Updated the README to direct readers to their own deployed Container App instead of a temporary hosted demo URL; the original infrastructure scripts do not deploy the complete integration.
 
 ## Purpose and scenario
 

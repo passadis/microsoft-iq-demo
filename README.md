@@ -51,7 +51,9 @@ The agent chooses tools based on the question and its instructions; routing and 
 
 ## Try the demo
 
-The deployed application is [Contoso Service Intelligence](https://iq-demo-web.ambitiousisland-c6c4e95e.swedencentral.azurecontainerapps.io/). Sign in with an account authorized for this deployment; Fabric questions also require access to Azure AI Search and the Fabric workspace. A user may be prompted to consent to delegated access. Browser verification of the Fabric sign-in flow is still pending.
+After deploying and configuring the solution in your own environment, open the web application's Container App in the Azure portal and select its application URL. Sign in with an account authorized for your deployment; Fabric questions also require access to Azure AI Search and the Fabric workspace. A user may be prompted to consent to delegated access. Browser verification of the Fabric sign-in flow is still pending.
+
+The demo is not permanently hosted. The repository's infrastructure scripts cover the original setup, not the complete integration described here; review [setup and local verification](#setup-and-local-verification) and the component guides before deploying.
 
 1. Select **CASE-1042** in the case list and review its current status.
 2. Ask: “What happened with this case, and what service-credit rules apply?” Inspect the case facts and policy attribution.
