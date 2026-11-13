@@ -25,6 +25,24 @@ def connect():
     )
 
 
+@app.function_name(name='monitor_credit_requests')
+@app.timer_trigger(schedule='0 */5 * * * *', arg_name='timer', run_on_startup=False, use_monitor=True)
+def monitor_credit_requests(timer: func.TimerRequest) -> None:
+    """Report a successful SQL health check, including zero stuck requests."""
+    with connect() as connection:
+        cursor = connection.cursor()
+        cursor.execute('''SELECT
+            COALESCE(SUM(CASE WHEN RequestStatus IN ('PendingDispatch', 'DispatchFailed')
+                AND CreatedAtUtc < DATEADD(minute, -10, SYSUTCDATETIME()) THEN 1 ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN RequestStatus='Queued'
+                AND UpdatedAtUtc < DATEADD(minute, -10, SYSUTCDATETIME()) THEN 1 ELSE 0 END), 0)
+            FROM dbo.ServiceCreditRequests''')
+        pending, queued = cursor.fetchone()
+    logging.info('credit_monitor_heartbeat pending_stuck=%s queued_stuck=%s', pending, queued)
+    if pending or queued:
+        logging.warning('credit_monitor_stuck pending_stuck=%s queued_stuck=%s', pending, queued)
+
+
 @app.function_name(name='publish_credit_outbox')
 @app.timer_trigger(schedule='0 */1 * * * *', arg_name='timer', run_on_startup=False, use_monitor=True)
 def publish_credit_outbox(timer: func.TimerRequest) -> None:

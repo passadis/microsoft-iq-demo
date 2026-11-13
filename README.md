@@ -125,6 +125,8 @@ The application commits the request, each appointment allocation, and an outbox 
 
 The Foundry project has an Application Insights connection for server-side agent traces. The web app exports request, dependency, and selected tool/action telemetry, while the Function emits its execution logs to the same resource. Use the request ID to correlate a simulated credit request with Function logs; full distributed trace continuity across the queue has not been verified. Foundry traces can contain prompts or retrieved content, so apply appropriate access and retention controls.
 
+The credit processor also checks SQL for requests stuck in dispatch or processing and emits a heartbeat. Azure Monitor rules can alert on stuck requests, a missing heartbeat, and messages in the Service Bus dead-letter queue. The [operations runbook](credit-processor/README.md#monitoring-and-recovery) describes investigation and controlled replay with Service Bus Explorer.
+
 ## Documentation
 
 | Guide | Purpose |
@@ -166,7 +168,7 @@ The local tests use mocks and do not establish that Azure access, user consent, 
 ## Boundaries and follow-up
 
 - The credit action is simulated. Request status is stored in SQL; no real payment or refund is made. The offline rehearsal continues to use a local JSONL file.
-- Outbox retries and idempotent consumption reduce the SQL-to-queue failure gap, but don't make external systems transactional. Investigate persistent pending requests and dead-lettered messages; alerts and operational replay are not yet automated.
+- Outbox retries and idempotent consumption reduce the SQL-to-queue failure gap, but don't make external systems transactional. Alerts require a configured notification receiver, and investigation and replay remain operator-driven.
 - The app is designed as a single-presenter demo. Its in-process conversation and approval state are not a scalable multi-user session store.
 - The indexed SharePoint path has not been verified for per-user document-level permission trimming. Fabric access uses a separate delegated user-token flow and requires a signed-in browser test.
 - SharePoint indexed knowledge sources and Fabric ontology integration use preview features. Check availability, permissions, behavior, and costs in your environment.

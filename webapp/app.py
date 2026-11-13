@@ -114,6 +114,19 @@ def _query_fabric(call, user_token: str | None) -> dict:
         return {"error": "Fabric ontology retrieval is unavailable or you lack access. Do not infer its data."}
 
 
+READ_TOOLS = {
+    'get_case_details': lambda call, token: _read_case(call),
+    'query_fabric_ontology': _query_fabric,
+}
+
+
+def _run_read_tool(call, user_token: str | None) -> dict:
+    handler = READ_TOOLS.get(call.name)
+    if handler is None:
+        return {"status": "unsupported_function", "function": call.name}
+    return handler(call, user_token)
+
+
 def _agent_reference() -> dict:
     return {
         "agent_reference": {
@@ -286,7 +299,7 @@ def _handle_response(client, response, user_token: str | None = None) -> dict:
             FunctionCallOutput(
                 type="function_call_output",
                 call_id=call.call_id,
-                output=json.dumps(_read_case(call) if call.name == 'get_case_details' else _query_fabric(call, user_token) if call.name == 'query_fabric_ontology' else {"status": "unsupported_function", "function": call.name}, ensure_ascii=False),
+                output=json.dumps(_run_read_tool(call, user_token), ensure_ascii=False),
             )
             for call in calls
         ]
@@ -499,12 +512,8 @@ def decision(body: DecisionIn, request: Request) -> dict:
             if call.name == "create_service_credit_request":
                 result = _execute_credit_request(json.loads(call.arguments), body.approved, f'SCR-{body.pending_id}')
                 results.append(result)
-            elif call.name == "get_case_details":
-                result = _read_case(call)
-            elif call.name == "query_fabric_ontology":
-                result = _query_fabric(call, request.headers.get("x-ms-token-aad-access-token"))
             else:
-                result = {"status": "unsupported_function", "function": call.name}
+                result = _run_read_tool(call, request.headers.get("x-ms-token-aad-access-token"))
             outputs.append(
                 FunctionCallOutput(
                     type="function_call_output",

@@ -16,6 +16,19 @@ class ProcessorTests(unittest.TestCase):
         message.get_body.return_value = json.dumps({'request_id': 'SCR-' + 'a' * 32}).encode()
         return message
 
+    @patch.object(processor.logging, 'warning')
+    @patch.object(processor.logging, 'info')
+    @patch.object(processor, 'connect')
+    def test_monitor_reports_healthy_and_stuck_counts(self, connect, info, warning):
+        cursor = connect.return_value.__enter__.return_value.cursor.return_value
+        cursor.fetchone.return_value = (0, 0)
+        processor.monitor_credit_requests(MagicMock())
+        info.assert_called_once_with('credit_monitor_heartbeat pending_stuck=%s queued_stuck=%s', 0, 0)
+        warning.assert_not_called()
+        cursor.fetchone.return_value = (1, 2)
+        processor.monitor_credit_requests(MagicMock())
+        warning.assert_called_once_with('credit_monitor_stuck pending_stuck=%s queued_stuck=%s', 1, 2)
+
     @patch.object(processor, 'connect')
     def test_duplicate_message_is_safe(self, connect):
         connection = connect.return_value.__enter__.return_value

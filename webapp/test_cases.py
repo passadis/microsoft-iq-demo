@@ -1,7 +1,7 @@
 import json
 import unittest
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from fastapi.testclient import TestClient
 from webapp.app import app, _citation_text, _handle_response, _query_fabric
@@ -53,6 +53,32 @@ class CaseIntegrationTests(unittest.TestCase):
             response = self.client.post('/api/decision', headers={'x-ms-client-principal-id': 'other'}, json={'pending_id': 'p1', 'approved': True})
         self.assertEqual(response.status_code, 403)
         self.assertIn('p1', pending)
+
+    def test_mixed_tool_calls_wait_for_decision_and_use_read_dispatch(self):
+        action = SimpleNamespace(type='function_call', name='create_service_credit_request', call_id='a', arguments='{}')
+        read = SimpleNamespace(type='function_call', name='query_fabric_ontology', call_id='r', arguments='{}')
+        unknown = SimpleNamespace(type='function_call', name='unknown', call_id='u', arguments='{}')
+        response = SimpleNamespace(output=[action, read, unknown])
+        reader = Mock(return_value={'answer': 'fabric result'})
+        agent = SimpleNamespace(responses=SimpleNamespace(create=Mock(return_value=SimpleNamespace(output=[], output_text='done'))))
+        state = {'user_id': 'owner', 'pending': {}, 'conversation_id': 'c1'}
+        headers = {'x-ms-client-principal-id': 'owner', 'x-ms-token-aad-access-token': 'user-token'}
+        with patch('webapp.app.REHEARSAL', False), patch('webapp.app._state', state), \
+             patch.dict('webapp.app.READ_TOOLS', {'query_fabric_ontology': reader}), \
+             patch('webapp.app._execute_credit_request', return_value={'status': 'declined'}) as execute, \
+             patch('webapp.app._openai_client', return_value=agent), patch('webapp.app._agent_reference', return_value={}):
+            proposal = _handle_response(agent, response, 'user-token')
+            self.assertEqual(proposal['type'], 'action_request')
+            reader.assert_not_called()
+            execute.assert_not_called()
+            result = self.client.post('/api/decision', headers=headers, json={'pending_id': proposal['pending_id'], 'approved': False})
+        self.assertEqual(result.status_code, 200)
+        execute.assert_called_once()
+        self.assertFalse(execute.call_args.args[1])
+        reader.assert_called_once_with(read, 'user-token')
+        outputs = agent.responses.create.call_args.kwargs['input']
+        self.assertEqual(json.loads(outputs[1]['output']), {'answer': 'fabric result'})
+        self.assertEqual(json.loads(outputs[2]['output']), {'status': 'unsupported_function', 'function': 'unknown'})
 
     @patch('webapp.app._handle_response', return_value={'type': 'message', 'text': 'Misleading model explanation'})
     @patch('webapp.app._execute_credit_request', return_value={'status': 'invalid_request', 'message': 'Customer availability is missing. No request was saved.'})

@@ -1,6 +1,10 @@
 # Contoso Service Intelligence: project log and backlog
 
-Last updated: 2026-11-13. This is a working record of decisions, activities and follow-up work for the synthetic live demo. Azure and preview-service details can change; verify live settings before an event or a new deployment.
+Last updated: 2026-11-14. This is a working record of decisions, activities and follow-up work for the synthetic live demo. Azure and preview-service details can change; verify live settings before an event or a new deployment.
+
+- Added and deployed a five-minute, read-only SQL monitor for credit request age, with a healthy heartbeat and a ten-minute stuck threshold. Azure Monitor rules watch stuck requests, missing heartbeats over 30 minutes, and the Service Bus dead-letter count; an action group has an email receiver. Application Insights recorded a successful heartbeat with zero stuck requests. Alert firing, notification delivery and dead-letter replay still need an end-to-end exercise. See the credit processor runbook and `infra/credit-monitoring.bicep`.
+- Added runbook instructions to test email separately and to trigger and clean up a deliberately invalid dead-letter test message in a dedicated demo environment. These are instructions, not a record of a completed test.
+- Refactored the web application's two read-tool dispatch paths into one allowlist and tested mixed read/action calls. This web change is local; it was not part of the Function deployment.
 
 - Updated the README to direct readers to their own deployed Container App instead of a temporary hosted demo URL; the original infrastructure scripts do not deploy the complete integration.
 
