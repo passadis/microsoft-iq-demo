@@ -131,6 +131,7 @@ The credit processor also checks SQL for requests stuck in dispatch or processin
 
 | Guide | Purpose |
 |---|---|
+| [Setup guide](SETUP.md) | Guided Azure deployment, SharePoint or Blob policy knowledge, Fabric ontology, SQL, messaging, hosting, and monitoring. |
 | [Project log and backlog](PROJECT-LOG.md) | Current deployment, decisions, completed work, verification, and follow-up items. |
 | [Demo prompts](demo-prompts.txt) | Example policy, action, ontology, and combined-source questions. |
 | [Web app guide](webapp/README.md) | Application endpoints, settings, local rehearsal, and hosting notes. |
@@ -141,7 +142,7 @@ The credit processor also checks SQL for requests stuck in dispatch or processin
 
 ## Setup and local verification
 
-The repository contains scripts for the original standalone Foundry, Search, and Blob-based demo. **They do not provision the complete deployed SharePoint, SQL, Fabric, Entra sign-in, and Container Apps integration.** Use the project log and component guides to understand the additional configuration before adapting the sample to another environment.
+Start with [SETUP.md](SETUP.md) for the guided Azure deployment. The original Foundry/Search template and the separate messaging, Function, and monitoring scripts do not provision the entire SharePoint, SQL, Fabric, Entra sign-in, and Container Apps integration automatically.
 
 For the original infrastructure path, see [infra/README.md](infra/README.md). The SQL scripts require a dedicated database and appropriate permissions; see [sql/README.md](sql/README.md). The Fabric tool also needs a configured ontology knowledge base and a delegated Search token for each signed-in user. A Foundry playground alone does not execute the client-side SQL or Fabric functions.
 

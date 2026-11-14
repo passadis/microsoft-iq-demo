@@ -1,6 +1,6 @@
 # Infrastructure as code
 
-Bicep template plus a PowerShell wrapper that provisions everything the demo needs on Azure and writes the repo's `.env` from the deployment outputs.
+The original Bicep template and PowerShell wrapper provision Foundry, Search and optional Blob resources and can write an ignored local `.env`. They do not provision the complete current demo. Follow [SETUP.md](../SETUP.md) for all steps, including the separate Service Bus, Function, monitoring and identity configuration.
 
 ## What it deploys
 
