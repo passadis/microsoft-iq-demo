@@ -8,7 +8,7 @@
 
 **A service agent that brings case data, business policies, and an enterprise ontology together—with a person in control of the action.**
 
-[Try the demo](#try-the-demo) · [Scenario](#the-contoso-scenario) · [Tech stack](#tech-stack) · [Architecture](#architecture) · [Documentation](#documentation)
+[Blogpost](https://www.cloudblogger.eu/post/ms-iq-foundry) · [Try the demo](#try-the-demo) · [Scenario](#the-contoso-scenario) · [Tech stack](#tech-stack) · [Architecture](#architecture) · [Documentation](#documentation)
 
 ## Introduction
 
