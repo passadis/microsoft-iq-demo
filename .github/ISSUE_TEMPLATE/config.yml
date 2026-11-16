@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Setup and usage support
+    url: https://github.com/passadis/microsoft-iq-demo/blob/main/SUPPORT.md
+    about: Read the support guide and component documentation.
+  - name: Report a security vulnerability
+    url: https://github.com/passadis/microsoft-iq-demo/blob/main/SECURITY.md
+    about: Use the private reporting instructions; do not post vulnerabilities publicly.
